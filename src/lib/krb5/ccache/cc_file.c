@@ -70,6 +70,10 @@
 #include <unistd.h>
 #endif
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #ifndef O_CLOEXEC
 #define O_CLOEXEC 0
 #endif
@@ -1310,9 +1314,20 @@ fcc_replace(krb5_context context, krb5_ccache id, krb5_principal princ,
     if (st != 0)
         goto errno_cleanup;
 
+#ifdef _WIN32
+    st = rename(tmpname, data->filename);
+    if (st != 0) {
+        if (ReplaceFile(data->filename, tmpname, NULL, 0, NULL, NULL)) {
+            st = 0;
+        } else {
+            goto errno_cleanup;
+        }
+    }
+#else
     st = rename(tmpname, data->filename);
     if (st != 0)
         goto errno_cleanup;
+#endif
     tmpfile_exists = FALSE;
 
 cleanup:
